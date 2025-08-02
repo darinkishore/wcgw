@@ -1,0 +1,18 @@
+[Unit]
+Description=WCGW FastMCP Server
+After=network.target
+
+[Service]
+Type=simple
+User=dev
+WorkingDirectory=/home/dev/projects/wcgw
+Environment="PATH=/home/dev/.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="HF_HOME=/home/dev/.cache/huggingface"
+Environment="REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt"
+Environment="SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+ExecStart=/home/dev/.local/bin/uv run wcgw_fastmcp
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

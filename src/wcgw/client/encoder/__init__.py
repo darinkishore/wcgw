@@ -28,6 +28,14 @@ class LazyEncoder:
             if self._tokenizer is None:
                 try:
                     logger.info("Initializing tokenizer from Xenova/claude-tokenizer")
+                    # Set SSL cert bundle for this thread if needed
+                    import os
+                    import certifi
+                    if not os.environ.get("REQUESTS_CA_BUNDLE"):
+                        os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+                    if not os.environ.get("SSL_CERT_FILE"):
+                        os.environ["SSL_CERT_FILE"] = certifi.where()
+                    
                     self._tokenizer = tokenizers.Tokenizer.from_pretrained(
                         "Xenova/claude-tokenizer"
                     )
