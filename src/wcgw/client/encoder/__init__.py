@@ -28,15 +28,33 @@ class LazyEncoder:
                 if self._tokenizer is None:
                     try:
                         logger.info("Initializing tokenizer from Xenova/claude-tokenizer")
-                        # Try with local files first if available
+                        
+                        # Method 1: Try direct file load if we can find it
+                        import os
+                        from pathlib import Path
+                        hf_home = os.environ.get("HF_HOME", os.path.join(os.path.expanduser("~"), ".cache", "huggingface"))
+                        tokenizer_paths = list(Path(hf_home).rglob("**/tokenizer.json"))
+                        
+                        for tf in tokenizer_paths:
+                            if "Xenova" in str(tf) and "claude" in str(tf):
+                                logger.info(f"Found tokenizer file at: {tf}")
+                                try:
+                                    self._tokenizer = tokenizers.Tokenizer.from_file(str(tf))
+                                    logger.info("Tokenizer loaded from direct file path")
+                                    return
+                                except Exception as e:
+                                    logger.warning(f"Direct file load failed: {e}")
+                        
+                        # Method 2: Try with local files first
                         try:
                             self._tokenizer = tokenizers.Tokenizer.from_pretrained(
                                 "Xenova/claude-tokenizer", 
                                 local_files_only=True
                             )
                             logger.info("Tokenizer loaded from cache")
-                        except Exception:
-                            # Fall back to downloading
+                        except Exception as e:
+                            logger.info(f"Local cache load failed: {e}")
+                            # Method 3: Fall back to downloading
                             self._tokenizer = tokenizers.Tokenizer.from_pretrained(
                                 "Xenova/claude-tokenizer"
                             )
@@ -44,8 +62,8 @@ class LazyEncoder:
                     except Exception as e:
                         self._init_error = e
                         logger.error(f"Failed to initialize tokenizer: {e}")
-                        # As a last resort, create a simple character tokenizer
-                        logger.warning("Creating fallback character tokenizer")
+                        # As a last resort, use character fallback
+                        logger.warning("Using fallback character tokenizer")
                         self._tokenizer = self._create_fallback_tokenizer()
 
     def _create_fallback_tokenizer(self) -> None:
