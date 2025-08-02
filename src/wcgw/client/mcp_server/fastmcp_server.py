@@ -51,7 +51,7 @@ CUSTOM_INSTRUCTIONS: Optional[str] = None
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
-async def lifespan():
+async def lifespan(app):
     global BASH_STATE, CUSTOM_INSTRUCTIONS
     
     # Startup
