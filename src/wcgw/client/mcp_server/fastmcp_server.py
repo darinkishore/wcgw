@@ -98,9 +98,8 @@ async def initialize(
     mode_name: str = Field(default="wcgw", description="Mode name", pattern="^(wcgw|architect|code_writer)$"),
     type: str = Field(default="first_call", description="Initialization type"),
     thread_id: str = Field(default="", description="Thread ID"),
-    lint_commands: Union[str, list[str]] = Field(default="all", description="Lint commands"),
-    type_check_commands: Union[str, list[str]] = Field(default="all", description="Type check commands"),
-    test_commands: Union[str, list[str]] = Field(default="all", description="Test commands"),
+    allowed_globs: Union[str, list[str]] = Field(default="all", description="Allowed globs for code_writer mode"),
+    allowed_commands: Union[str, list[str]] = Field(default="all", description="Allowed commands for code_writer mode"),
     ctx: Context = None
 ) -> str:
     """
@@ -117,6 +116,15 @@ async def initialize(
     """
     global BASH_STATE
     
+    # Create code_writer_config if mode is code_writer
+    code_writer_config = None
+    if mode_name == "code_writer":
+        from ...types_ import CodeWriterMode
+        code_writer_config = CodeWriterMode(
+            allowed_globs=allowed_globs,
+            allowed_commands=allowed_commands
+        )
+    
     # Create Initialize object
     init_obj = Initialize(
         any_workspace_path=any_workspace_path,
@@ -125,9 +133,7 @@ async def initialize(
         mode_name=mode_name,
         type=type,
         thread_id=thread_id,
-        lint_commands=lint_commands,
-        type_check_commands=type_check_commands,
-        test_commands=test_commands
+        code_writer_config=code_writer_config
     )
     
     # Call the tool
@@ -220,7 +226,6 @@ async def bash_command(
 @mcp.tool
 async def read_files(
     file_paths: list[str] = Field(..., description="File paths to read"),
-    thread_id: str = Field(default="", description="Thread ID"),
     ctx: Context = None
 ) -> str:
     """
@@ -233,8 +238,7 @@ async def read_files(
     
     # Create ReadFiles object
     read_obj = ReadFiles(
-        file_paths=file_paths,
-        thread_id=thread_id
+        file_paths=file_paths
     )
     
     # Call the tool
@@ -262,7 +266,6 @@ async def read_files(
 @mcp.tool
 async def read_image(
     file_path: str = Field(..., description="Image file path"),
-    thread_id: str = Field(default="", description="Thread ID"),
     ctx: Context = None
 ) -> dict[str, Any]:
     """Read an image from the shell."""
@@ -270,8 +273,7 @@ async def read_image(
     
     # Create ReadImage object
     read_img = ReadImage(
-        file_path=file_path,
-        thread_id=thread_id
+        file_path=file_path
     )
     
     # Call the tool
@@ -353,11 +355,10 @@ async def file_write_or_edit(
 # Tool 6: ContextSave
 @mcp.tool
 async def context_save(
-    task_id: str = Field(..., description="Random 3 word unique id or whatever user provided"),
-    file_patterns: list[str] = Field(..., description="File patterns to save"),
+    id: str = Field(..., description="Random 3 word unique id or whatever user provided"),
+    relevant_file_globs: list[str] = Field(..., description="File patterns to save"),
     description: str = Field(..., description="Description of the context"),
-    project_path: str = Field(default="", description="Project path (empty string if none)"),
-    thread_id: str = Field(default="", description="Thread ID"),
+    project_root_path: str = Field(default="", description="Project path (empty string if none)"),
     ctx: Context = None
 ) -> str:
     """
@@ -369,11 +370,10 @@ async def context_save(
     
     # Create ContextSave object
     save_obj = ContextSave(
-        task_id=task_id,
-        file_patterns=file_patterns,
+        id=id,
+        relevant_file_globs=relevant_file_globs,
         description=description,
-        project_path=project_path,
-        thread_id=thread_id
+        project_root_path=project_root_path
     )
     
     # Call the tool
